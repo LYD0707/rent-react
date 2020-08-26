@@ -29,3 +29,12 @@ li {
 * {
     touch-action: pan-y;
 }
+
+/* // 全局样式 */
+#root,.app {
+height: 100%;
+}
+/* // Map组件样式 */
+.mapBox,#container {
+height: 100%;
+}

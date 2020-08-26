@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 
 // 导入组件
-import { Carousel, Grid, Flex, WingBlank } from 'antd-mobile'
+import { Carousel, Grid, Flex, WingBlank, SearchBar } from 'antd-mobile'
 
 // 首页样式
 import './index.scss'
@@ -11,6 +11,7 @@ import { BASE_URL } from '../../utils/request'
 
 // 导入栏目导航数据
 import Navs from '../../utils/nav'
+import { getCurrCity } from '../../utils'
 
 
 /**
@@ -27,56 +28,95 @@ export default class Index extends Component {
         // 租房小组数据
         groups: [],
         // 最新资讯数据
-        news: []
+        news: [],
+        // 搜索关键字
+        keyword: '',
+        // 城市定位信息
+        cityInfo: {label: '--', value: ''}
     }
 
 
     // 相当于vue中created
     componentDidMount() {
-        this.getSwiper()
-        this.getGroups()
-        this.getNews()
+        // this.getSwiper()
+        // this.getGrid()
+        // this.getNews()
+        this.getAllDatas()
+        this.getCity()
     }
 
-    // 获取轮播图数据
-    async getSwiper() {
-        const res = await getSwiper()
-        // console.log(res)
-        if (res.status === 200) {
+    // 获取定位信息
+    async getCity() {
+        const res = await getCurrCity()
+        console.log(res)
+        this.setState({
+            cityInfo: res
+        })
+    }
+
+    // 重构优化
+    // 封装首页所有接口调用，三合一
+    getAllDatas() {
+        // 使用Promise.all（array）实现，并发执行多个promise的后台接口调用
+        const promises = [getSwiper(), getGrid(), getNews()]
+        Promise.all(promises).then((res) => {
+            console.log(res)
+            // 数组解构
+            const [swiper, groups, news] = res
+            // 批量响应式
             this.setState({
-                swiper: res.data
+                swiper: swiper.data,
+                groups: groups.data,
+                news: news.data
             }, () => {
                 this.setState({
                     isPlay: true
                 })
-                // console.log(this.state.swiper)
             })
-        }
+        })
     }
+
+    // 获取轮播图数据
+    // async getSwiper() {
+    //     const res = await getSwiper()
+    //     // console.log(res)
+    //     if (res.status === 200) {
+    //         this.setState({
+    //             swiper: res.data
+    //         }, () => {
+    //             this.setState({
+    //                 isPlay: true
+    //             })
+    //             // console.log(this.state.swiper)
+    //         })
+    //     }
+    // }
 
     // 获取租房小组数据
-    async getGroups() {
-        const res = await getGrid()
-        // console.log(res)
-        if (res.status === 200) {
-            this.setState({
-                groups: res.data
-            })
-            // console.log(this.state.groups)
-        }
-    }
+    // async getGrid() {
+    //     const res = await getGrid()
+    //     // console.log(res)
+    //     if (res.status === 200) {
+    //         this.setState({
+    //             groups: res.data
+    //         })
+    //         // console.log(this.state.groups)
+    //     }
+    // }
 
     // 获取最新资讯
-    async getNews() {
-        const res = await getNews()
-        console.log(res)
-        if (res.status === 200) {
-            this.setState({
-                news: res.data
-            })
-        }
-    }
+    // async getNews() {
+    //     const res = await getNews()
+    //     console.log(res)
+    //     if (res.status === 200) {
+    //         this.setState({
+    //             news: res.data
+    //         })
+    //     }
+    // }
 
+
+    
     // 渲染轮播图
     renderSwiper = () => {
         return (
@@ -173,9 +213,46 @@ export default class Index extends Component {
         )
     }
 
+    // 渲染顶部导航
+    renderTopNav = () => {
+        return (
+            <Flex className="topNav" justify="around">
+                <div className="searchBox">
+                    {/* 城市定位 */}
+                    <div className="city" onClick={() => {
+                        // 点击跳转到城市列表
+                        this.props.history.push('/cityList')
+                    }}>
+                        {this.state.cityInfo.label}
+                        <i className="iconfont icon-arrow"></i>
+                    </div>
+                    {/* 基于input封装 */}
+                    <SearchBar
+                        value={this.state.keyword}
+                        placeholder="请输入小区或地址"
+                        onChange={(v) => {
+                            // v 输入的value值
+                            console.log(v)
+                            this.setState({
+                                keyword: v
+                            })
+                        }} />
+                </div>
+                {/* 地图找房 */}
+                <div className="map" onClick={() => {
+                    this.props.history.push('/map')
+                }}>
+                    <i key="0" className="iconfont icon-map" />
+                </div>
+            </Flex>
+        )
+    }
+
     render() {
         return (
             <div className="Index">
+                {/* 顶部导航 */}
+                {this.renderTopNav()}
                 {/* 轮播图 */}
                 {this.renderSwiper()}
                 {/* 栏目导航 */}
